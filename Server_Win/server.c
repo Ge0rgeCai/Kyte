@@ -120,7 +120,7 @@ void mergeFile(FILE* file, char* buffer, SOCKET new_serverSocket, unsigned long 
 	int received_file_length = 0;
 	//判断如果在serverSocket中任然能够收到报文时，并且不发生错误，则一直接受来自serverSocket中的信息
 	while ((r = recv(new_serverSocket, buffer, BUFFER_SIZE, 0)) > 0) {
-			//这里的r总是唯一的原因是">"的优先级高于 "="
+			//如果少加了圆括号r总是为“1”，因为">"的优先级高于 "="
 		buffer[r] = "\0";
 		if (r < BUFFER_SIZE) {
 			if (file_length = fwrite(buffer, sizeof(char), r, file) < r) {
