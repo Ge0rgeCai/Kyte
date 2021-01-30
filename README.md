@@ -47,8 +47,8 @@ gh repo clone Ge0rgeCai/Kyte
 
   
 
-  ## LISENCE
+## LISENCE
 
-  [看这里](./LISENCE)
+[MIT](https://github.com/Ge0rgeCai/Kyte/blob/master/LICENSE)
 
   
