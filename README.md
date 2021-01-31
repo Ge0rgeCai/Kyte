@@ -43,6 +43,7 @@ gh repo clone Ge0rgeCai/Kyte
 将`.c`文件都放入VS的`源文件`中，`.h`文件放在VS的`头文件`中VS将代码编译。
 
 ## 使用
+使用时会默认在服务端当前目录创建`Download_Dir`文件夹，用于存储接收到的文件。
 
 **WINDOWS:**
 
