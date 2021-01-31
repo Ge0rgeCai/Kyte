@@ -115,6 +115,7 @@ void splitFile(FILE* file, unsigned long size, char* buffer, SOCKET clientSocket
 		doProcess(BUFFER_SIZE, size, &handled_file_size, bar);
 		memset(buffer, 0, BUFFER_SIZE);
 	}
+	printf("\n");
 	printf("FILE:File Transfer Completed!\n");
 	return;
 }
