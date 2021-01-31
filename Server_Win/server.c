@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <stdio.h>
 #include <io.h>
+#include <direct.h>
+#include "process.h"
 
 #pragma comment (lib, "ws2_32.lib")
 
@@ -16,7 +18,7 @@ void mergeFile(FILE* file, char* buffer, SOCKET new_serverSocket, unsigned long 
 int main() {
 	//判断下载文件夹是否存在
 	if (_access(DOWNLOAD_DIR, 6) < 0) {
-		if (mkdir(DOWNLOAD_DIR) < 0) {
+		if (_mkdir(DOWNLOAD_DIR) < 0) {
 			printf("SYSTEM:Initializing Failed!\n");
 			return -2;
 		}
@@ -70,7 +72,7 @@ int main() {
 		}
 		printf("SYSTEM:Client %s Connect Successfully!\n", inet_ntoa(clientAddr.sin_addr));
 		//7.接收数据
-		unsigned long size;
+		unsigned long totall_file_size;
 		int r;
 		char fileName[MAX_FILE_NAME_SIZE];
 		//接收文件名
@@ -83,29 +85,37 @@ int main() {
 		printf("收到文件:%s.\n",fileName);
 
 		//接收文件大小
-		r = recv(new_serverSocket, (char*)&size, sizeof(unsigned long), 0);
+		r = recv(new_serverSocket, (char*)&totall_file_size, sizeof(unsigned long), 0);
 		if (r < 0) {
 			printf("SYSTEM:Receive Data Failed!\n");
 			closesocket(new_serverSocket);
 			continue;
 		}
-		printf("文件大小:%d.\n",size);
+		printf("文件大小:%d Byte.\n",totall_file_size);
 		char buffer[BUFFER_SIZE];
 		memset(buffer, 0, BUFFER_SIZE);
 		//文件夹路径字符串拼接
 		char* separator = "\\";
 		char* download_dir = DOWNLOAD_DIR;
 		char* path = (char*)malloc(strlen(download_dir) + strlen(separator));
+		if (path == 0) {
+			printf("SYSTEM:ERROR! Return = -3");
+			break;
+		}
 		strcpy(path, download_dir);
 		strcat(path, separator);
 		char* downloadDir_fileName = (char*)malloc(strlen(path) + strlen(fileName));
+		if (downloadDir_fileName == 0) {
+			printf("SYSTEM:ERROR! Return = -3");
+			break;
+		}
 		strcpy(downloadDir_fileName, path);
 		strcat(downloadDir_fileName, fileName);
 
 		FILE* file;
 		fopen_s(&file, downloadDir_fileName, "wb+");
 		//接收文件
-		mergeFile(file, buffer, new_serverSocket, size);
+		mergeFile(file, buffer, new_serverSocket, totall_file_size);
 	}
 
 	closesocket(serverSocket);
@@ -114,19 +124,24 @@ int main() {
 	return 0;
 }
 
+//合并文件
 void mergeFile(FILE* file, char* buffer, SOCKET new_serverSocket, unsigned long size) {
 	int r;
 	int file_length;
 	int received_file_length = 0;
+	unsigned long handled_file_size = 0;
+	char* bar = (char*)malloc(sizeof(char) * 103);
+	bar = initProcess();
 	//判断如果在serverSocket中任然能够收到报文时，并且不发生错误，则一直接受来自serverSocket中的信息
 	while ((r = recv(new_serverSocket, buffer, BUFFER_SIZE, 0)) > 0) {
-			//如果少加了圆括号r总是为“1”，因为">"的优先级高于 "="
-		buffer[r] = "\0";
+			//这里的r总是唯一的原因是">"的优先级高于 "="
+		buffer[r] = '\0';
 		if (r < BUFFER_SIZE) {
 			if (file_length = fwrite(buffer, sizeof(char), r, file) < r) {
 				printf("FILE:Write Failed!\n");
 				return;
 			}
+			doProcess(r, size, &handled_file_size, bar);
 			memset(buffer, 0, BUFFER_SIZE);
 			break;
 		}
@@ -134,8 +149,10 @@ void mergeFile(FILE* file, char* buffer, SOCKET new_serverSocket, unsigned long 
 			printf("FILE:Write Failed!\n");
 			return;
 		}
+		doProcess(BUFFER_SIZE, size, &handled_file_size, bar);
 		memset(buffer, 0, BUFFER_SIZE);
 	}
+	printf("\n");
 	fclose(file);
 	printf("FILE:File Transfer Completed!\n");
 

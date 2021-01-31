@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #include <stdio.h>
 #include <windows.h>
+#include "process.h"
 
 #pragma comment (lib, "ws2_32.lib")
 
@@ -9,7 +10,7 @@
 #define MAX_FILE_NAME_SIZE 256
 
 unsigned long getFileSize(FILE* file);													//获得文件大小
-void splitFile(FILE* file, unsigned long size, char* buffer, SOCKET clientSocket);		//当文件过大时，将文件分割成多个小块
+void splitFile(FILE* file, unsigned long size, char* buffer, SOCKET clientSocket, char* bar);		//当文件过大时，将文件分割成多个小块
 
 int main(int argc, char** argv) {
 	if (argc != 3) {
@@ -50,6 +51,9 @@ int main(int argc, char** argv) {
 
 	//5.与服务端保持连接，并通信
 	char buffer[BUFFER_SIZE];
+	//初始化进度条
+	char* bar = (char*)malloc(sizeof(char) * 103);
+	bar = initProcess();
 	FILE* file;
 	fopen_s(&file, argv[2], "rb");
 	if (file == NULL) {
@@ -62,14 +66,16 @@ int main(int argc, char** argv) {
 	char fileName[MAX_FILE_NAME_SIZE];
 	memset(fileName, 0, MAX_FILE_NAME_SIZE);
 	strncpy(fileName, argv[2], strlen(argv[2]));
+	printf("File Name:%s\n", fileName);
 	send(clientSocket, fileName, MAX_FILE_NAME_SIZE, 0);
 
 	//传输文件大小
-	unsigned long size = getFileSize(file);
-	send(clientSocket, (char*)&size, sizeof(unsigned long), 0);
+	unsigned long totall_file_size = getFileSize(file);
+	printf("File Size:%d Byte.\n", totall_file_size);
+	send(clientSocket, (char*)&totall_file_size, sizeof(unsigned long), 0);
 
 	//分割文件并传输
-	splitFile(file, size, buffer, clientSocket);
+	splitFile(file, totall_file_size, buffer, clientSocket, bar);
 	closesocket(clientSocket);
 	fclose(file);
 	return 0;
@@ -88,23 +94,27 @@ unsigned long getFileSize(FILE* file) {
 }
 
 //分割文件
-void splitFile(FILE* file, unsigned long size, char* buffer, SOCKET clientSocket) {
+void splitFile(FILE* file, unsigned long size, char* buffer, SOCKET clientSocket, char* bar) {
+	unsigned long handled_file_size = 0;
 	while (!feof(file)) {	
 		//保证最后一次分割文件时，读取文件到buffer中，不出错
 		int n = size - ftell(file);
 		if (size - ftell(file) < sizeof(char)*BUFFER_SIZE) {
 			fread(buffer, sizeof(char), n, file);
 			send(clientSocket, buffer, n, 0);
-			printf("buffer_last:%s\n", buffer);
+			doProcess(n, size, &handled_file_size, bar);
+		//	printf("buffer_last:%s\n", buffer);
 			memset(buffer, 0, BUFFER_SIZE);
 			break;
 		}
 		
 		//每次将文件指针偏移"sizeof(char)*BUFFER_SIZE"个字节
 		fread(buffer, sizeof(char), BUFFER_SIZE, file);
-		printf("buffer:%s\n", buffer);
+		//printf("buffer:%s\n", buffer);
 		send(clientSocket, buffer, BUFFER_SIZE, 0);
+		doProcess(BUFFER_SIZE, size, &handled_file_size, bar);
 		memset(buffer, 0, BUFFER_SIZE);
 	}
+	printf("FILE:File Transfer Completed!\n");
 	return;
 }
