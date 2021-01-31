@@ -5,6 +5,7 @@
 - [介绍](#介绍)
 - [安装](#安装)
 - [环境](#环境)
+- [使用](#使用)
 - [TODO](#TODO)
 
 ## 介绍
@@ -31,15 +32,41 @@ gh repo clone Ge0rgeCai/Kyte
 
 ### 编译器/IDE:<br/>
 
-**msvc**<br/>(VS中自带，如果不喜欢IDE，可以自行下载msvc编译器，来将代码进行编译)<br/>
+**msvc**<br/>
+
+都用`msvc`直接编译了，多的就不用说明了吧 ：）<br/>
+
+(VS中自带，如果不喜欢IDE，可以自行下载msvc编译器，来将代码进行编译)<br/>
 
 **Visual Studio 2019**<br/>
 
-使用VS将代码编译。
+将`.c`文件都放入VS的`源文件`中，`.h`文件放在VS的`头文件`中VS将代码编译。
+
+## 使用
+
+**WINDOWS:**
+
+客户端:	
+
+```bash
+./Kyte_Client_Win.exe <IP> <FileName>
+```
+
+服务端:	
+
+```bash
+./Kyte_Server_Win.exe
+```
+
+
 
 ## TODO
 
 - [x] 大文件传输
+
+- [x] 进度条
+
+- [ ] 服务端验证
 
 - [ ] 多线程接收大文件(提高速度)
 
